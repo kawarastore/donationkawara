@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Donasi Live 🎮</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c28;
+    --border: #2a2a3d;
+    --accent: #7c3aed;
+    --accent2: #a855f7;
+    --accent-glow: rgba(124,58,237,0.35);
+    --green: #22c55e;
+    --yellow: #eab308;
+    --red: #ef4444;
+    --text: #f1f5f9;
+    --muted: #64748b;
+    --card-radius: 16px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    background-image: radial-gradient(ellipse at 20% 10%, rgba(124,58,237,0.15) 0%, transparent 50%),
+                      radial-gradient(ellipse at 80% 80%, rgba(168,85,247,0.1) 0%, transparent 50%);
+  }
+
+  .container { max-width: 520px; margin: 0 auto; padding: 24px 16px 48px; }
+
+  /* HEADER */
+  .streamer-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    padding: 24px;
+    text-align: center;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .streamer-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+  .live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--red);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+  }
+  .live-dot { width: 7px; height: 7px; background: white; border-radius: 50%; animation: pulse 1.2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .streamer-avatar {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px;
+    margin: 0 auto 12px;
+    border: 3px solid var(--accent);
+    box-shadow: 0 0 24px var(--accent-glow);
+  }
+  .streamer-name { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+  .streamer-sub { font-size: 13px; color: var(--muted); }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 20px;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .tab-btn.active {
+    background: var(--accent);
+    color: white;
+    box-shadow: 0 2px 12px var(--accent-glow);
+  }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* SECTION CARD */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 14px;
+  }
+
+  /* AMOUNT GRID */
+  .amount-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .amt-btn {
+    padding: 12px 8px;
+    border: 2px solid var(--border);
+    background: var(--surface2);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    text-align: center;
+  }
+  .amt-btn:hover { border-color: var(--accent); color: var(--accent2); }
+  .amt-btn.selected {
+    border-color: var(--accent);
+    background: rgba(124,58,237,0.2);
+    color: var(--accent2);
+    box-shadow: 0 0 12px var(--accent-glow);
+  }
+  .amt-btn.popular { position: relative; }
+  .amt-btn.popular::after {
+    content: '🔥';
+    position: absolute;
+    top: -8px; right: -4px;
+    font-size: 12px;
+  }
+
+  /* CUSTOM AMOUNT */
+  .custom-amount-wrap { position: relative; }
+  .currency-prefix {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: 700;
+    color: var(--accent2);
+    font-size: 14px;
+  }
+  .input-field {
+    width: 100%;
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 13px 14px 13px 48px;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-field:focus { border-color: var(--accent); }
+  .input-field::placeholder { color: var(--muted); font-weight: 400; }
+
+  .input-field-plain {
+    width: 100%;
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 13px 14px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+    resize: none;
+  }
+  .input-field-plain:focus { border-color: var(--accent); }
+  .input-field-plain::placeholder { color: var(--muted); }
+
+  /* LIMIT INFO */
+  .limit-info {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .limit-badge {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+  .limit-badge .val { font-size: 13px; font-weight: 700; color: var(--accent2); }
+  .limit-badge .lbl { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* MEDIASHARE TOGGLE */
+  .mediashare-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    margin-bottom: 10px;
+    user-select: none;
+  }
+  .mediashare-toggle.enabled { border-color: var(--green); }
+  .ms-left { display: flex; align-items: center; gap: 10px; }
+  .ms-icon { font-size: 20px; }
+  .ms-text strong { font-size: 13px; font-weight: 700; }
+  .ms-text small { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .toggle-pill {
+    width: 44px; height: 24px;
+    background: var(--border);
+    border-radius: 12px;
+    position: relative;
+    transition: background 0.2s;
+  }
+  .toggle-pill::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    background: white;
+    border-radius: 50%;
+    top: 3px; left: 3px;
+    transition: transform 0.2s;
+  }
+  .mediashare-toggle.enabled .toggle-pill { background: var(--green); }
+  .mediashare-toggle.enabled .toggle-pill::after { transform: translateX(20px); }
+
+  .mediashare-input { display: none; }
+  .mediashare-input.show { display: block; }
+
+  /* PAYMENT METHODS */
+  .payment-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .pay-btn {
+    padding: 14px 8px;
+    border: 2px solid var(--border);
+    background: var(--surface2);
+    border-radius: 10px;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    font-family: inherit;
+  }
+  .pay-btn .pay-icon { font-size: 22px; margin-bottom: 4px; }
+  .pay-btn .pay-name { font-size: 12px; font-weight: 700; }
+  .pay-btn .pay-num { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .pay-btn:hover { border-color: var(--accent); }
+  .pay-btn.selected {
+    border-color: var(--accent);
+    background: rgba(124,58,237,0.2);
+  }
+  .pay-btn.dana.selected { border-color: #0190f3; background: rgba(1,144,243,0.15); }
+  .pay-btn.gopay.selected { border-color: #00AED6; background: rgba(0,174,214,0.15); }
+  .pay-btn.qris.selected { border-color: #e11d48; background: rgba(225,29,72,0.15); }
+
+  /* SUBMIT */
+  .submit-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+    box-shadow: 0 4px 20px var(--accent-glow);
+    letter-spacing: 0.3px;
+  }
+  .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 28px var(--accent-glow); }
+  .submit-btn:active { transform: translateY(0); }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* PAYMENT MODAL */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(6px);
+    z-index: 100;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .modal-overlay.show { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px 24px 0 0;
+    padding: 28px 24px 40px;
+    width: 100%;
+    max-width: 520px;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.32,0.72,0,1);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal-overlay.show .modal { transform: translateY(0); }
+  .modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+  .modal-title { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+  .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+
+  .payment-detail {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .payment-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .payment-row:last-child { border-bottom: none; }
+  .payment-row .label { color: var(--muted); }
+  .payment-row .value { font-weight: 700; }
+  .payment-row .value.amount { color: var(--accent2); font-size: 18px; }
+
+  .payment-instruction {
+    background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(168,85,247,0.1));
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+  .instr-icon { font-size: 36px; margin-bottom: 8px; }
+  .instr-title { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .instr-number {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--accent2);
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .copy-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 7px 18px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .copy-btn:hover { background: var(--accent2); }
+
+  .qris-img {
+    width: 200px; height: 200px;
+    background: white;
+    border-radius: 12px;
+    margin: 0 auto 8px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .qris-img img { width: 100%; height: 100%; object-fit: contain; }
+  .qris-placeholder { color: #888; font-size: 12px; text-align: center; }
+
+  .confirm-row { display: flex; gap: 10px; margin-top: 4px; }
+  .confirm-btn {
+    flex: 1;
+    padding: 15px;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .confirm-btn.primary {
+    background: linear-gradient(135deg, var(--green), #16a34a);
+    color: white;
+    box-shadow: 0 4px 16px rgba(34,197,94,0.3);
+  }
+  .confirm-btn.secondary {
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    color: var(--text);
+  }
+
+  .timer-bar-wrap {
+    background: var(--surface2);
+    border-radius: 8px;
+    height: 6px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .timer-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    transition: width 1s linear;
+  }
+  .timer-text { font-size: 11px; color: var(--muted); text-align: center; margin-bottom: 14px; }
+
+  /* HISTORY */
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .history-item:last-child { border-bottom: none; }
+  .h-avatar {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .h-info { flex: 1; }
+  .h-name { font-size: 14px; font-weight: 700; }
+  .h-msg { font-size: 12px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+  .h-right { text-align: right; }
+  .h-amount { font-size: 14px; font-weight: 800; color: var(--accent2); }
+  .h-time { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .h-status {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-top: 4px;
+  }
+  .h-status.paid { background: rgba(34,197,94,0.2); color: var(--green); }
+  .h-status.pending { background: rgba(234,179,8,0.2); color: var(--yellow); }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+  }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 999;
+    transition: transform 0.3s;
+    white-space: nowrap;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .section-gap { height: 16px; }
+
+  .ms-url-note {
+    background: rgba(34,197,94,0.1);
+    border: 1px solid rgba(34,197,94,0.3);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--green);
+    margin-top: 8px;
+    display: none;
+  }
+  .ms-url-note.show { display: block; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- STREAMER HEADER -->
+  <div class="streamer-card">
+    <div class="live-badge"><div class="live-dot"></div> LIVE</div>
+    <div class="streamer-avatar" id="streamerEmoji">🎮</div>
+    <div class="streamer-name" id="streamerName">Loading...</div>
+    <div class="streamer-sub" id="streamerSub">Klik tombol donasi untuk support!</div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('donate')">💜 Donasi</button>
+    <button class="tab-btn" onclick="switchTab('history')">📋 Riwayat</button>
+  </div>
+
+  <!-- TAB: DONATE -->
+  <div class="tab-content active" id="tab-donate">
+
+    <!-- DONOR NAME -->
+    <div class="card">
+      <div class="card-title">👤 Nama Kamu</div>
+      <input class="input-field-plain" type="text" id="donorName" placeholder="Masukkan nama / nickname kamu..." maxlength="30">
+    </div>
+
+    <!-- AMOUNT -->
+    <div class="card">
+      <div class="card-title">💰 Pilih Nominal</div>
+      <div class="amount-grid">
+        <button class="amt-btn" onclick="selectAmount(1000)">Rp 1.000</button>
+        <button class="amt-btn" onclick="selectAmount(2000)">Rp 2.000</button>
+        <button class="amt-btn" onclick="selectAmount(5000)">Rp 5.000</button>
+        <button class="amt-btn popular" onclick="selectAmount(10000)">Rp 10.000</button>
+        <button class="amt-btn" onclick="selectAmount(25000)">Rp 25.000</button>
+        <button class="amt-btn" onclick="selectAmount(50000)">Rp 50.000</button>
+        <button class="amt-btn" onclick="selectAmount(100000)">Rp 100.000</button>
+        <button class="amt-btn" onclick="selectAmount(500000)">Rp 500.000</button>
+        <button class="amt-btn" onclick="selectAmount(1000000)">Rp 1 Juta</button>
+      </div>
+      <div class="custom-amount-wrap">
+        <span class="currency-prefix">Rp</span>
+        <input class="input-field" type="number" id="customAmount" placeholder="Atau ketik nominal sendiri..." min="1000" max="1000000" oninput="onCustomAmount()">
+      </div>
+      <div class="limit-info">
+        <div class="limit-badge">
+          <div class="val">Rp 1.000</div>
+          <div class="lbl">Minimum Alert</div>
+        </div>
+        <div class="limit-badge">
+          <div class="val">Rp 10.000</div>
+          <div class="lbl">Min. MediaShare</div>
+        </div>
+        <div class="limit-badge">
+          <div class="val">Rp 1 Juta</div>
+          <div class="lbl">Maksimum</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MESSAGE -->
+    <div class="card">
+      <div class="card-title">💬 Pesan (opsional)</div>
+      <textarea class="input-field-plain" id="donorMsg" placeholder="Tulis pesan untuk streamer..." rows="3" maxlength="150"></textarea>
+    </div>
+
+    <!-- MEDIASHARE -->
+    <div class="card">
+      <div class="card-title">🎬 MediaShare</div>
+      <div class="mediashare-toggle" id="msToggle" onclick="toggleMediaShare()">
+        <div class="ms-left">
+          <div class="ms-icon">▶️</div>
+          <div class="ms-text">
+            <strong>Kirim Video YouTube</strong>
+            <small>Minimal donasi Rp 10.000 untuk MediaShare</small>
+          </div>
+        </div>
+        <div class="toggle-pill"></div>
+      </div>
+      <div class="mediashare-input" id="msInput">
+        <input class="input-field-plain" type="text" id="mediaUrl" placeholder="https://youtube.com/watch?v=..." oninput="validateMediaUrl()">
+        <div class="ms-url-note" id="msUrlNote">✅ Link YouTube valid!</div>
+      </div>
+    </div>
+
+    <!-- PAYMENT METHOD -->
+    <div class="card">
+      <div class="card-title">💳 Metode Pembayaran</div>
+      <div class="payment-grid">
+        <button class="pay-btn dana" onclick="selectPayment('dana')" id="pay-dana">
+          <div class="pay-icon">💙</div>
+          <div class="pay-name">DANA</div>
+          <div class="pay-num">0877-2025-4002</div>
+        </button>
+        <button class="pay-btn gopay" onclick="selectPayment('gopay')" id="pay-gopay">
+          <div class="pay-icon">💚</div>
+          <div class="pay-name">GoPay</div>
+          <div class="pay-num">0877-2025-4002</div>
+        </button>
+        <button class="pay-btn qris" onclick="selectPayment('qris')" id="pay-qris">
+          <div class="pay-icon">📱</div>
+          <div class="pay-name">QRIS</div>
+          <div class="pay-num">Scan QR</div>
+        </button>
+      </div>
+    </div>
+
+    <button class="submit-btn" onclick="submitDonation()" id="submitBtn">
+      💜 Lanjut ke Pembayaran
+    </button>
+
+  </div>
+
+  <!-- TAB: HISTORY -->
+  <div class="tab-content" id="tab-history">
+    <div class="card">
+      <div class="card-title">📋 Riwayat Donasi</div>
+      <div id="historyList">
+        <div class="empty-state">
+          <div class="icon">💜</div>
+          <p>Belum ada donasi. Jadilah yang pertama!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- PAYMENT MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+  <div class="modal" id="paymentModal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">💳 Detail Pembayaran</div>
+    <div class="modal-sub" id="modalSub">Transfer sesuai nominal berikut</div>
+
+    <div class="payment-detail">
+      <div class="payment-row">
+        <span class="label">Dari</span>
+        <span class="value" id="modalDonor">-</span>
+      </div>
+      <div class="payment-row">
+        <span class="label">Nominal</span>
+        <span class="value amount" id="modalAmount">-</span>
+      </div>
+      <div class="payment-row">
+        <span class="label">Via</span>
+        <span class="value" id="modalMethod">-</span>
+      </div>
+      <div class="payment-row" id="modalMsRow" style="display:none">
+        <span class="label">MediaShare</span>
+        <span class="value" id="modalMsVal">✅ Ya</span>
+      </div>
+    </div>
+
+    <div class="payment-instruction" id="paymentInstruction">
+      <div class="instr-icon" id="instrIcon">💙</div>
+      <div class="instr-title" id="instrTitle">Transfer ke nomor DANA</div>
+      <div class="instr-number" id="instrNumber">0877-2025-4002</div>
+      <button class="copy-btn" onclick="copyNumber()">📋 Salin Nomor</button>
+    </div>
+
+    <div class="timer-bar-wrap">
+      <div class="timer-bar" id="timerBar" style="width:100%"></div>
+    </div>
+    <div class="timer-text" id="timerText">Konfirmasi dalam 3 menit</div>
+
+    <div class="confirm-row">
+      <button class="confirm-btn secondary" onclick="closeModal()">✕ Batal</button>
+      <button class="confirm-btn primary" onclick="confirmPayment()" id="confirmPayBtn">✅ Sudah Transfer</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+let selectedAmount = 0;
+let selectedPayment = '';
+let mediaShareEnabled = false;
+let currentDonationId = null;
+let timerInterval = null;
+let timerSeconds = 180;
+
+// ============ LOAD SETTINGS ============
+function loadSettings() {
+  const cfg = JSON.parse(localStorage.getItem('streamer_config') || '{}');
+  document.getElementById('streamerName').textContent = cfg.name || 'StreamerKu';
+  document.getElementById('streamerSub').textContent = cfg.tagline || 'Support streamer favorit kamu! 💜';
+  document.getElementById('streamerEmoji').textContent = cfg.emoji || '🎮';
+}
+
+// ============ TABS ============
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  event.target.classList.add('active');
+  if (tab === 'history') loadHistory();
+}
+
+// ============ AMOUNT ============
+function selectAmount(val) {
+  selectedAmount = val;
+  document.getElementById('customAmount').value = '';
+  document.querySelectorAll('.amt-btn').forEach(b => b.classList.remove('selected'));
+  event.target.classList.add('selected');
+  checkMediaShareAmount();
+}
+
+function onCustomAmount() {
+  const val = parseInt(document.getElementById('customAmount').value);
+  selectedAmount = val || 0;
+  document.querySelectorAll('.amt-btn').forEach(b => b.classList.remove('selected'));
+  checkMediaShareAmount();
+}
+
+function checkMediaShareAmount() {
+  if (mediaShareEnabled && selectedAmount < 10000) {
+    showToast('⚠️ MediaShare minimal Rp 10.000');
+  }
+}
+
+// ============ MEDIASHARE ============
+function toggleMediaShare() {
+  mediaShareEnabled = !mediaShareEnabled;
+  const toggle = document.getElementById('msToggle');
+  const input = document.getElementById('msInput');
+  toggle.classList.toggle('enabled', mediaShareEnabled);
+  input.classList.toggle('show', mediaShareEnabled);
+  if (!mediaShareEnabled) {
+    document.getElementById('mediaUrl').value = '';
+    document.getElementById('msUrlNote').classList.remove('show');
+  }
+}
+
+function validateMediaUrl() {
+  const url = document.getElementById('mediaUrl').value;
+  const isYt = /youtube\.com\/watch|youtu\.be\//.test(url);
+  document.getElementById('msUrlNote').classList.toggle('show', isYt && url.length > 5);
+}
+
+// ============ PAYMENT METHOD ============
+function selectPayment(method) {
+  selectedPayment = method;
+  document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('pay-' + method).classList.add('selected');
+}
+
+// ============ SUBMIT ============
+function submitDonation() {
+  const name = document.getElementById('donorName').value.trim();
+  if (!name) { showToast('⚠️ Masukkan nama kamu dulu!'); return; }
+  if (!selectedAmount || selectedAmount < 1000) { showToast('⚠️ Pilih nominal minimal Rp 1.000'); return; }
+  if (selectedAmount > 1000000) { showToast('⚠️ Maksimal donasi Rp 1.000.000'); return; }
+  if (!selectedPayment) { showToast('⚠️ Pilih metode pembayaran!'); return; }
+  if (mediaShareEnabled && selectedAmount < 10000) { showToast('⚠️ MediaShare minimal Rp 10.000'); return; }
+  if (mediaShareEnabled) {
+    const url = document.getElementById('mediaUrl').value.trim();
+    if (!url) { showToast('⚠️ Masukkan link YouTube untuk MediaShare!'); return; }
+  }
+  openPaymentModal();
+}
+
+// ============ MODAL ============
+function openPaymentModal() {
+  const name = document.getElementById('donorName').value.trim();
+  const msg = document.getElementById('donorMsg').value.trim();
+  const mediaUrl = document.getElementById('mediaUrl').value.trim();
+
+  document.getElementById('modalDonor').textContent = name;
+  document.getElementById('modalAmount').textContent = formatRp(selectedAmount);
+  document.getElementById('modalMethod').textContent = selectedPayment.toUpperCase();
+
+  const msRow = document.getElementById('modalMsRow');
+  if (mediaShareEnabled && mediaUrl) {
+    msRow.style.display = 'flex';
+  } else {
+    msRow.style.display = 'none';
+  }
+
+  // Payment instruction
+  const cfg = JSON.parse(localStorage.getItem('streamer_config') || '{}');
+  const qrisImg = cfg.qrisImage || '';
+
+  const instrIcon = document.getElementById('instrIcon');
+  const instrTitle = document.getElementById('instrTitle');
+  const instrNumber = document.getElementById('instrNumber');
+  const instrArea = document.getElementById('paymentInstruction');
+
+  if (selectedPayment === 'dana') {
+    instrIcon.textContent = '💙';
+    instrTitle.textContent = 'Transfer ke DANA';
+    instrNumber.textContent = '0877-2025-4002';
+    instrArea.innerHTML = `
+      <div class="instr-icon">💙</div>
+      <div class="instr-title">Transfer ke nomor DANA</div>
+      <div class="instr-number">0877-2025-4002</div>
+      <button class="copy-btn" onclick="copyNumber('0877202540002')">📋 Salin Nomor</button>
+    `;
+  } else if (selectedPayment === 'gopay') {
+    instrArea.innerHTML = `
+      <div class="instr-icon">💚</div>
+      <div class="instr-title">Transfer ke GoPay</div>
+      <div class="instr-number">0877-2025-4002</div>
+      <button class="copy-btn" onclick="copyNumber('087720254002')">📋 Salin Nomor</button>
+    `;
+  } else if (selectedPayment === 'qris') {
+    if (qrisImg) {
+      instrArea.innerHTML = `
+        <div class="instr-title" style="margin-bottom:12px">Scan QRIS berikut</div>
+        <div class="qris-img"><img src="${qrisImg}" alt="QRIS"></div>
+        <div style="font-size:11px;color:var(--muted)">Scan dengan aplikasi apapun yang support QRIS</div>
+      `;
+    } else {
+      instrArea.innerHTML = `
+        <div class="instr-icon">📱</div>
+        <div class="instr-title">QRIS belum diupload</div>
+        <div style="font-size:13px;color:var(--muted)">Hubungi streamer untuk info pembayaran</div>
+      `;
+    }
+  }
+
+  // Save pending donation
+  const donationId = 'don_' + Date.now();
+  currentDonationId = donationId;
+  const donation = {
+    id: donationId,
+    name, msg, mediaUrl: mediaShareEnabled ? mediaUrl : '',
+    amount: selectedAmount,
+    method: selectedPayment,
+    mediaShare: mediaShareEnabled,
+    status: 'pending',
+    time: Date.now()
+  };
+
+  const donations = JSON.parse(localStorage.getItem('donations') || '[]');
+  donations.unshift(donation);
+  localStorage.setItem('donations', JSON.stringify(donations));
+
+  // Trigger storage event for other tabs
+  localStorage.setItem('last_donation', JSON.stringify(donation));
+
+  // Open modal
+  document.getElementById('modalOverlay').classList.add('show');
+  startTimer();
+}
+
+function startTimer() {
+  timerSeconds = 180;
+  clearInterval(timerInterval);
+  updateTimer();
+  timerInterval = setInterval(() => {
+    timerSeconds--;
+    updateTimer();
+    if (timerSeconds <= 0) {
+      clearInterval(timerInterval);
+      closeModal();
+      showToast('⏱️ Waktu habis, silakan coba lagi');
+    }
+  }, 1000);
+}
+
+function updateTimer() {
+  const pct = (timerSeconds / 180) * 100;
+  document.getElementById('timerBar').style.width = pct + '%';
+  const m = Math.floor(timerSeconds / 60);
+  const s = timerSeconds % 60;
+  document.getElementById('timerText').textContent = `Konfirmasi dalam ${m}:${s.toString().padStart(2,'0')}`;
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+  clearInterval(timerInterval);
+}
+
+function closeModalOutside(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+}
+
+function copyNumber(num) {
+  const n = num || '087720254002';
+  navigator.clipboard.writeText(n).then(() => showToast('✅ Nomor disalin!'));
+}
+
+function confirmPayment() {
+  clearInterval(timerInterval);
+  const btn = document.getElementById('confirmPayBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Mengirim...';
+
+  // Mark as confirmed (waiting streamer to approve)
+  const donations = JSON.parse(localStorage.getItem('donations') || '[]');
+  const idx = donations.findIndex(d => d.id === currentDonationId);
+  if (idx !== -1) {
+    donations[idx].status = 'confirmed';
+    donations[idx].confirmedAt = Date.now();
+    localStorage.setItem('donations', JSON.stringify(donations));
+    // Trigger for dashboard
+    localStorage.setItem('donation_confirmed', JSON.stringify(donations[idx]));
+    localStorage.setItem('donation_confirmed_ts', Date.now().toString());
+  }
+
+  setTimeout(() => {
+    btn.textContent = '✅ Sudah Transfer';
+    closeModal();
+    showToast('🎉 Notifikasi akan muncul di layar live!');
+    // Reset form
+    document.getElementById('donorName').value = '';
+    document.getElementById('donorMsg').value = '';
+    document.getElementById('customAmount').value = '';
+    document.getElementById('mediaUrl').value = '';
+    selectedAmount = 0;
+    selectedPayment = '';
+    mediaShareEnabled = false;
+    document.getElementById('msToggle').classList.remove('enabled');
+    document.getElementById('msInput').classList.remove('show');
+    document.querySelectorAll('.amt-btn').forEach(b => b.classList.remove('selected'));
+    document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('selected'));
+    btn.disabled = false;
+    btn.textContent = '✅ Sudah Transfer';
+  }, 1200);
+}
+
+// ============ HISTORY ============
+function loadHistory() {
+  const donations = JSON.parse(localStorage.getItem('donations') || '[]');
+  const list = document.getElementById('historyList');
+  if (!donations.length) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">💜</div><p>Belum ada donasi. Jadilah yang pertama!</p></div>';
+    return;
+  }
+  list.innerHTML = donations.slice(0, 30).map(d => `
+    <div class="history-item">
+      <div class="h-avatar">${d.name[0].toUpperCase()}</div>
+      <div class="h-info">
+        <div class="h-name">${escHtml(d.name)}</div>
+        <div class="h-msg">${d.msg ? escHtml(d.msg) : (d.mediaShare ? '🎬 ' + escHtml(d.mediaUrl) : '(Tidak ada pesan)')}</div>
+      </div>
+      <div class="h-right">
+        <div class="h-amount">${formatRp(d.amount)}</div>
+        <div class="h-time">${timeAgo(d.time)}</div>
+        <span class="h-status ${d.status === 'paid' ? 'paid' : 'pending'}">${d.status === 'paid' ? '✓ Terbayar' : '⏳ Menunggu'}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ============ UTILS ============
+function formatRp(n) {
+  return 'Rp ' + n.toLocaleString('id-ID');
+}
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function timeAgo(ts) {
+  const diff = Date.now() - ts;
+  if (diff < 60000) return 'Baru saja';
+  if (diff < 3600000) return Math.floor(diff/60000) + ' menit lalu';
+  if (diff < 86400000) return Math.floor(diff/3600000) + ' jam lalu';
+  return Math.floor(diff/86400000) + ' hari lalu';
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ============ INIT ============
+loadSettings();
+</script>
+</body>
+</html>
