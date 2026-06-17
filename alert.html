@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alert Overlay</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: transparent;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Google Fonts via @import */
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@700;800;900&display=swap');
+
+  /* ALERT CONTAINER - bottom right */
+  #alertContainer {
+    position: absolute;
+    bottom: 40px;
+    right: 40px;
+    width: 480px;
+    pointer-events: none;
+  }
+
+  /* ALERT BOX */
+  .alert-box {
+    background: linear-gradient(135deg, rgba(13,13,20,0.97) 0%, rgba(25,15,45,0.97) 100%);
+    border: 2px solid rgba(124,58,237,0.6);
+    border-radius: 20px;
+    padding: 0;
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(168,85,247,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+    transform: translateX(520px);
+    opacity: 0;
+    transition: transform 0.5s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease;
+  }
+
+  .alert-box.show {
+    transform: translateX(0);
+    opacity: 1;
+  }
+
+  .alert-box.hide {
+    transform: translateX(520px);
+    opacity: 0;
+    transition: transform 0.4s ease-in, opacity 0.3s ease-in;
+  }
+
+  /* TOP BAR */
+  .alert-topbar {
+    background: linear-gradient(90deg, #7c3aed, #a855f7);
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .alert-topbar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%);
+    animation: shimmer 2s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  .alert-type-icon { font-size: 20px; z-index: 1; }
+
+  .alert-type-label {
+    font-size: 13px;
+    font-weight: 800;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    z-index: 1;
+  }
+
+  .alert-topbar-right {
+    margin-left: auto;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .alert-dot {
+    width: 8px; height: 8px;
+    background: white;
+    border-radius: 50%;
+    animation: blink 0.8s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1}50%{opacity:0} }
+
+  .alert-live-text { font-size: 11px; font-weight: 800; color: white; letter-spacing: 0.5px; }
+
+  /* BODY */
+  .alert-body { padding: 18px 20px 16px; }
+
+  .alert-donor-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .alert-avatar {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    font-weight: 900;
+    color: white;
+    border: 3px solid rgba(168,85,247,0.5);
+    box-shadow: 0 0 20px rgba(124,58,237,0.5);
+    flex-shrink: 0;
+  }
+
+  .alert-donor-info { flex: 1; }
+
+  .alert-donor-name {
+    font-size: 20px;
+    font-weight: 900;
+    color: white;
+    line-height: 1.1;
+    text-shadow: 0 0 20px rgba(168,85,247,0.6);
+  }
+
+  .alert-method {
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    font-weight: 600;
+    margin-top: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .alert-amount-badge {
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    border-radius: 12px;
+    padding: 8px 16px;
+    text-align: center;
+    box-shadow: 0 4px 16px rgba(124,58,237,0.5);
+    flex-shrink: 0;
+  }
+
+  .alert-amount-label { font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 700; text-transform: uppercase; }
+  .alert-amount-value { font-size: 20px; font-weight: 900; color: white; line-height: 1.2; white-space: nowrap; }
+
+  /* MESSAGE */
+  .alert-message {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    display: none;
+  }
+  .alert-message.show { display: block; }
+  .alert-message-text {
+    font-size: 14px;
+    color: rgba(255,255,255,0.85);
+    font-weight: 500;
+    line-height: 1.5;
+    font-style: italic;
+  }
+
+  /* MEDIASHARE */
+  .alert-mediashare {
+    background: rgba(34,197,94,0.12);
+    border: 1px solid rgba(34,197,94,0.3);
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: none;
+    align-items: center;
+    gap: 10px;
+  }
+  .alert-mediashare.show { display: flex; }
+  .ms-icon-big { font-size: 22px; }
+  .ms-info { flex: 1; overflow: hidden; }
+  .ms-label { font-size: 10px; font-weight: 800; color: #22c55e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+  .ms-url { font-size: 12px; color: rgba(255,255,255,0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* PROGRESS BAR */
+  .alert-progress {
+    height: 3px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 0 0 18px 18px;
+    overflow: hidden;
+  }
+  .alert-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #7c3aed, #a855f7);
+    width: 100%;
+    transform-origin: left;
+    transition: transform linear;
+  }
+
+  /* CONFETTI PARTICLES */
+  .particle {
+    position: absolute;
+    width: 8px; height: 8px;
+    border-radius: 2px;
+    animation: fall 2s ease-in forwards;
+    pointer-events: none;
+  }
+  @keyframes fall {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(120px) rotate(720deg); opacity: 0; }
+  }
+
+  /* BIG AMOUNT SPECIAL EFFECT */
+  .mega-amount .alert-topbar {
+    background: linear-gradient(90deg, #b45309, #d97706, #f59e0b);
+  }
+  .mega-amount .alert-box {
+    border-color: rgba(251,191,36,0.7);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.7), 0 0 40px rgba(251,191,36,0.2);
+  }
+  .mega-amount .alert-avatar {
+    background: linear-gradient(135deg, #d97706, #f59e0b);
+    box-shadow: 0 0 24px rgba(251,191,36,0.6);
+  }
+  .mega-amount .alert-amount-badge {
+    background: linear-gradient(135deg, #b45309, #f59e0b);
+    box-shadow: 0 4px 16px rgba(251,191,36,0.4);
+  }
+  .mega-amount .alert-progress-bar { background: linear-gradient(90deg, #d97706, #f59e0b); }
+  .mega-amount .alert-donor-name { text-shadow: 0 0 20px rgba(251,191,36,0.6); }
+</style>
+</head>
+<body>
+
+<div id="alertContainer">
+  <div class="alert-box" id="alertBox">
+    <div class="alert-topbar" id="alertTopbar">
+      <span class="alert-type-icon" id="alertIcon">💜</span>
+      <span class="alert-type-label" id="alertLabel">Donasi Masuk!</span>
+      <div class="alert-topbar-right">
+        <div class="alert-dot"></div>
+        <span class="alert-live-text">LIVE</span>
+      </div>
+    </div>
+    <div class="alert-body">
+      <div class="alert-donor-row">
+        <div class="alert-avatar" id="alertAvatar">?</div>
+        <div class="alert-donor-info">
+          <div class="alert-donor-name" id="alertName">-</div>
+          <div class="alert-method" id="alertMethod">via DANA</div>
+        </div>
+        <div class="alert-amount-badge">
+          <div class="alert-amount-label">Donasi</div>
+          <div class="alert-amount-value" id="alertAmount">Rp 0</div>
+        </div>
+      </div>
+      <div class="alert-message" id="alertMessage">
+        <div class="alert-message-text" id="alertMsgText"></div>
+      </div>
+      <div class="alert-mediashare" id="alertMediaShare">
+        <div class="ms-icon-big">🎬</div>
+        <div class="ms-info">
+          <div class="ms-label">MediaShare dikirim!</div>
+          <div class="ms-url" id="alertMsUrl"></div>
+        </div>
+      </div>
+    </div>
+    <div class="alert-progress">
+      <div class="alert-progress-bar" id="alertProgressBar"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let alertQueue = [];
+let isShowing = false;
+let progressInterval = null;
+let lastAlertTs = 0;
+
+const COLORS = ['#7c3aed','#a855f7','#ec4899','#f59e0b','#22c55e','#3b82f6'];
+
+function formatRp(n) {
+  return 'Rp ' + n.toLocaleString('id-ID');
+}
+
+function getSettings() {
+  return JSON.parse(localStorage.getItem('alert_settings') || '{"minAlert":5000,"minMs":10000,"duration":8,"volume":80}');
+}
+
+function checkForAlerts() {
+  const ts = parseInt(localStorage.getItem('alert_trigger_ts') || '0');
+  if (ts > lastAlertTs) {
+    lastAlertTs = ts;
+    const alertData = JSON.parse(localStorage.getItem('alert_trigger') || 'null');
+    if (alertData) {
+      const settings = getSettings();
+      if (alertData.amount >= settings.minAlert) {
+        alertQueue.push(alertData);
+        processQueue();
+      }
+    }
+  }
+}
+
+function processQueue() {
+  if (isShowing || alertQueue.length === 0) return;
+  const data = alertQueue.shift();
+  showAlert(data);
+}
+
+function showAlert(data) {
+  isShowing = true;
+  const settings = getSettings();
+  const duration = (settings.duration || 8) * 1000;
+  const isMega = data.amount >= 100000;
+
+  // Set content
+  document.getElementById('alertName').textContent = data.name || 'Anon';
+  document.getElementById('alertAvatar').textContent = (data.name || 'A')[0].toUpperCase();
+  document.getElementById('alertAmount').textContent = formatRp(data.amount);
+  document.getElementById('alertMethod').textContent = 'via ' + (data.method || 'DANA').toUpperCase();
+
+  // Message
+  const msgEl = document.getElementById('alertMessage');
+  const msgText = document.getElementById('alertMsgText');
+  if (data.msg) {
+    msgText.textContent = `"${data.msg}"`;
+    msgEl.classList.add('show');
+  } else {
+    msgEl.classList.remove('show');
+  }
+
+  // MediaShare
+  const msEl = document.getElementById('alertMediaShare');
+  const msUrl = document.getElementById('alertMsUrl');
+  if (data.mediaShare && data.mediaUrl) {
+    msUrl.textContent = data.mediaUrl;
+    msEl.classList.add('show');
+    document.getElementById('alertIcon').textContent = '🎬';
+    document.getElementById('alertLabel').textContent = 'MediaShare Masuk!';
+  } else {
+    msEl.classList.remove('show');
+    document.getElementById('alertIcon').textContent = '💜';
+    document.getElementById('alertLabel').textContent = isMega ? '🔥 DONASI GEDE!' : 'Donasi Masuk!';
+  }
+
+  // Mega style
+  const box = document.getElementById('alertBox');
+  box.classList.toggle('mega-amount', isMega);
+
+  // Play sound
+  playDonationSound(data.amount, settings.volume);
+
+  // Spawn particles
+  spawnParticles(isMega);
+
+  // Show
+  box.classList.add('show');
+  box.classList.remove('hide');
+
+  // Progress bar
+  const bar = document.getElementById('alertProgressBar');
+  bar.style.transition = 'none';
+  bar.style.transform = 'scaleX(1)';
+  setTimeout(() => {
+    bar.style.transition = `transform ${duration}ms linear`;
+    bar.style.transform = 'scaleX(0)';
+  }, 50);
+
+  // Hide after duration
+  setTimeout(() => {
+    hideAlert();
+  }, duration);
+}
+
+function hideAlert() {
+  const box = document.getElementById('alertBox');
+  box.classList.remove('show');
+  box.classList.add('hide');
+  setTimeout(() => {
+    isShowing = false;
+    processQueue();
+  }, 500);
+}
+
+function spawnParticles(isMega) {
+  const count = isMega ? 20 : 10;
+  const container = document.getElementById('alertContainer');
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.left = (Math.random() * 480) + 'px';
+      p.style.top = '-10px';
+      p.style.background = COLORS[Math.floor(Math.random() * COLORS.length)];
+      p.style.animationDuration = (1.5 + Math.random()) + 's';
+      p.style.animationDelay = (Math.random() * 0.5) + 's';
+      container.appendChild(p);
+      setTimeout(() => p.remove(), 3000);
+    }, i * 50);
+  }
+}
+
+function playDonationSound(amount, volume = 80) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const vol = volume / 100;
+
+    const gainNode = ctx.createGain();
+    gainNode.gain.value = vol;
+    gainNode.connect(ctx.destination);
+
+    // Different tones for different amounts
+    const freqs = amount >= 100000 ? [523, 659, 784, 1047] :
+                  amount >= 50000  ? [440, 554, 659] :
+                  amount >= 10000  ? [392, 494, 587] :
+                                     [349, 440, 523];
+
+    freqs.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.connect(g);
+      g.connect(gainNode);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      const start = ctx.currentTime + i * 0.12;
+      const end = start + 0.25;
+      g.gain.setValueAtTime(0, start);
+      g.gain.linearRampToValueAtTime(0.3, start + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, end);
+      osc.start(start);
+      osc.stop(end);
+    });
+  } catch (e) { /* Audio not supported */ }
+}
+
+// Poll every 500ms
+setInterval(checkForAlerts, 500);
+
+// Initial check
+checkForAlerts();
+</script>
+</body>
+</html>
