@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Streamer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c28;
+    --border: #2a2a3d;
+    --accent: #7c3aed;
+    --accent2: #a855f7;
+    --accent-glow: rgba(124,58,237,0.35);
+    --green: #22c55e;
+    --yellow: #eab308;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --text: #f1f5f9;
+    --muted: #64748b;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* LAYOUT */
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar {
+    width: 240px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+    position: fixed;
+    top: 0; bottom: 0;
+    display: flex; flex-direction: column;
+  }
+  .main { margin-left: 240px; padding: 28px; flex: 1; }
+
+  .logo {
+    padding: 0 20px 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .logo-text { font-size: 18px; font-weight: 900; }
+  .logo-text span { color: var(--accent2); }
+  .logo-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 20px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 14px;
+    font-weight: 600;
+    border-left: 3px solid transparent;
+  }
+  .nav-item:hover { color: var(--text); background: var(--surface2); }
+  .nav-item.active { color: var(--accent2); border-left-color: var(--accent); background: rgba(124,58,237,0.1); }
+  .nav-icon { font-size: 18px; width: 24px; text-align: center; }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+  }
+  .online-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--green);
+    font-weight: 600;
+  }
+  .online-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+
+  /* PAGE */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .page-title { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+  .page-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+  }
+  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .stat-value { font-size: 24px; font-weight: 900; }
+  .stat-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .stat-card.highlight { border-color: var(--accent); background: rgba(124,58,237,0.08); }
+
+  /* CARD */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 18px;
+  }
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .card-title { font-size: 14px; font-weight: 700; }
+  .card-action {
+    font-size: 12px;
+    color: var(--accent2);
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  /* DONATION TABLE */
+  .don-table { width: 100%; border-collapse: collapse; }
+  .don-table th {
+    text-align: left;
+    padding: 8px 10px;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    border-bottom: 1px solid var(--border);
+  }
+  .don-table td {
+    padding: 12px 10px;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(42,42,61,0.5);
+    vertical-align: middle;
+  }
+  .don-table tr:last-child td { border-bottom: none; }
+  .don-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .donor-cell { display: flex; align-items: center; gap: 10px; }
+  .donor-av {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .donor-name { font-weight: 700; font-size: 13px; }
+  .donor-msg { font-size: 11px; color: var(--muted); margin-top: 2px; max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .amount-cell { font-weight: 800; font-size: 14px; color: var(--accent2); }
+  .method-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .method-badge.dana { background: rgba(1,144,243,0.2); color: #38bdf8; }
+  .method-badge.gopay { background: rgba(0,174,214,0.2); color: #22d3ee; }
+  .method-badge.qris { background: rgba(225,29,72,0.2); color: #f87171; }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .status-badge.paid { background: rgba(34,197,94,0.2); color: var(--green); }
+  .status-badge.confirmed { background: rgba(234,179,8,0.2); color: var(--yellow); }
+  .status-badge.pending { background: rgba(100,116,139,0.2); color: var(--muted); }
+
+  .action-btns { display: flex; gap: 6px; }
+  .act-btn {
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .act-btn:hover { border-color: var(--accent); color: var(--accent2); }
+  .act-btn.approve { border-color: var(--green); color: var(--green); background: rgba(34,197,94,0.1); }
+  .act-btn.approve:hover { background: rgba(34,197,94,0.2); }
+  .act-btn.send-alert { border-color: var(--accent); color: var(--accent2); background: rgba(124,58,237,0.1); }
+  .act-btn.send-alert:hover { background: rgba(124,58,237,0.2); }
+
+  /* SETTINGS */
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; display: block; }
+  .form-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-input:focus { border-color: var(--accent); }
+  .form-input::placeholder { color: var(--muted); }
+
+  .save-btn {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .save-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px var(--accent-glow); }
+
+  /* QRIS UPLOAD */
+  .qris-upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .qris-upload-zone:hover { border-color: var(--accent); background: rgba(124,58,237,0.05); }
+  .qris-upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .qris-icon { font-size: 40px; margin-bottom: 10px; }
+  .qris-text { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .qris-sub { font-size: 12px; color: var(--muted); }
+  .qris-preview {
+    width: 160px; height: 160px;
+    background: white;
+    border-radius: 10px;
+    margin: 0 auto 12px;
+    display: none;
+    align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .qris-preview img { width: 100%; height: 100%; object-fit: contain; }
+  .qris-preview.show { display: flex; }
+
+  /* ALERT TEST */
+  .alert-test-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .test-row { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 12px; }
+  .test-row .form-group { flex: 1; margin-bottom: 0; }
+  .test-btn {
+    padding: 11px 20px;
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .test-btn:hover { background: var(--accent2); }
+
+  /* LINK BOX */
+  .link-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .link-url { font-size: 13px; color: var(--accent2); font-weight: 600; word-break: break-all; }
+  .link-copy {
+    padding: 7px 14px;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+  .link-copy:hover { background: var(--accent2); }
+
+  /* LIVE INDICATOR */
+  .incoming-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(34,197,94,0.15);
+    border: 1px solid rgba(34,197,94,0.4);
+    border-radius: 8px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--green);
+    margin-bottom: 14px;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 999;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  .empty-table { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
+
+  /* NEW ROW HIGHLIGHT */
+  @keyframes highlightRow {
+    0% { background: rgba(34,197,94,0.15); }
+    100% { background: transparent; }
+  }
+  .new-row td { animation: highlightRow 2s ease-out forwards; }
+
+  .tab-pills {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .tab-pill {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .tab-pill.active { border-color: var(--accent); color: var(--accent2); background: rgba(124,58,237,0.15); }
+
+  .ms-indicator {
+    display: inline-flex; align-items: center; gap: 3px;
+    background: rgba(124,58,237,0.2); color: var(--accent2);
+    padding: 2px 7px; border-radius: 20px; font-size: 10px; font-weight: 700; margin-top: 3px;
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-text">Donasi<span>Live</span></div>
+      <div class="logo-sub">Dashboard Streamer</div>
+    </div>
+    <nav>
+      <div class="nav-item active" onclick="showPage('dashboard')">
+        <span class="nav-icon">📊</span> Dashboard
+      </div>
+      <div class="nav-item" onclick="showPage('donations')">
+        <span class="nav-icon">💜</span> Donasi Masuk
+        <span id="pendingCount" style="margin-left:auto;background:var(--yellow);color:#000;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;display:none"></span>
+      </div>
+      <div class="nav-item" onclick="showPage('alert')">
+        <span class="nav-icon">🔔</span> Alert & OBS
+      </div>
+      <div class="nav-item" onclick="showPage('settings')">
+        <span class="nav-icon">⚙️</span> Pengaturan
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="online-badge"><div class="online-dot"></div> Sistem Aktif</div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- PAGE: DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-title">📊 Dashboard</div>
+      <div class="page-sub">Ringkasan aktivitas donasi kamu</div>
+
+      <div class="stats-grid">
+        <div class="stat-card highlight">
+          <div class="stat-label">Total Donasi</div>
+          <div class="stat-value" id="statTotal">Rp 0</div>
+          <div class="stat-sub" id="statCount">0 donasi</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Menunggu Konfirmasi</div>
+          <div class="stat-value" id="statPending" style="color:var(--yellow)">0</div>
+          <div class="stat-sub">perlu di-approve</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Sudah Terbayar</div>
+          <div class="stat-value" id="statPaid" style="color:var(--green)">0</div>
+          <div class="stat-sub">donasi lunas</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">MediaShare</div>
+          <div class="stat-value" id="statMs" style="color:var(--accent2)">0</div>
+          <div class="stat-sub">video dikirim</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔔 Donasi Terbaru</div>
+          <div class="card-action" onclick="showPage('donations')">Lihat Semua →</div>
+        </div>
+        <div id="recentDonations"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔗 Link Donasi Kamu</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Link Halaman Donate (bagikan ke penonton)</label>
+          <div class="link-box">
+            <span class="link-url" id="donateLink">donasi.html</span>
+            <button class="link-copy" onclick="copyLink('donasi.html')">📋 Salin</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Link Alert OBS (pasang sebagai Browser Source)</label>
+          <div class="link-box">
+            <span class="link-url" id="alertLink">alert.html</span>
+            <button class="link-copy" onclick="copyLink('alert.html')">📋 Salin</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: DONATIONS -->
+    <div class="page" id="page-donations">
+      <div class="page-title">💜 Donasi Masuk</div>
+      <div class="page-sub">Approve donasi dan kirim alert ke OBS</div>
+
+      <div id="newDonationBadge" class="incoming-badge" style="display:none">
+        <span>🔔</span> Ada donasi baru masuk!
+      </div>
+
+      <div class="tab-pills">
+        <button class="tab-pill active" onclick="filterDonations('all', this)">Semua</button>
+        <button class="tab-pill" onclick="filterDonations('confirmed', this)">Menunggu ✅</button>
+        <button class="tab-pill" onclick="filterDonations('paid', this)">Terbayar 💚</button>
+        <button class="tab-pill" onclick="filterDonations('pending', this)">Belum Konfirmasi</button>
+      </div>
+
+      <div class="card">
+        <table class="don-table" id="donTable">
+          <thead>
+            <tr>
+              <th>Pendonor</th>
+              <th>Nominal</th>
+              <th>Metode</th>
+              <th>Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="donTableBody">
+            <tr><td colspan="5" class="empty-table">Belum ada donasi masuk</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PAGE: ALERT -->
+    <div class="page" id="page-alert">
+      <div class="page-title">🔔 Alert & OBS Setup</div>
+      <div class="page-sub">Atur tampilan notifikasi di layar live</div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">🖥️ OBS Browser Source</div></div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Tambahkan Browser Source di OBS dengan URL file <strong>alert.html</strong>, ukuran 1920×1080, transparan.</p>
+        <div class="form-group">
+          <label class="form-label">URL Alert (path lokal)</label>
+          <div class="link-box">
+            <span class="link-url">alert.html (buka di browser OBS)</span>
+            <button class="link-copy" onclick="openAlert()">🔗 Buka</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">🧪 Test Alert</div></div>
+        <div class="alert-test-box">
+          <div class="test-row">
+            <div class="form-group">
+              <label class="form-label">Nama Pendonor</label>
+              <input class="form-input" type="text" id="testName" value="TestUser">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nominal</label>
+              <input class="form-input" type="number" id="testAmount" value="5000">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Pesan</label>
+            <input class="form-input" type="text" id="testMsg" value="Halo streamer, semangat yaa!">
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="test-btn" onclick="sendTestAlert(false)">🔔 Test Alert Normal</button>
+            <button class="test-btn" onclick="sendTestAlert(true)" style="background:var(--green)">🎬 Test MediaShare</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">⚙️ Pengaturan Alert</div></div>
+        <div class="settings-grid">
+          <div class="form-group">
+            <label class="form-label">Minimum Alert (Rp)</label>
+            <input class="form-input" type="number" id="minAlert" value="5000">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Minimum MediaShare (Rp)</label>
+            <input class="form-input" type="number" id="minMs" value="10000">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Durasi Alert (detik)</label>
+            <input class="form-input" type="number" id="alertDuration" value="8">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Volume Alert (0-100)</label>
+            <input class="form-input" type="number" id="alertVolume" value="80" min="0" max="100">
+          </div>
+        </div>
+        <button class="save-btn" onclick="saveAlertSettings()">💾 Simpan Pengaturan</button>
+      </div>
+    </div>
+
+    <!-- PAGE: SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="page-title">⚙️ Pengaturan</div>
+      <div class="page-sub">Kustomisasi profil dan pembayaran</div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">👤 Profil Streamer</div></div>
+        <div class="settings-grid">
+          <div class="form-group">
+            <label class="form-label">Nama / Username</label>
+            <input class="form-input" type="text" id="cfgName" placeholder="Nama streamer kamu">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Emoji Avatar</label>
+            <input class="form-input" type="text" id="cfgEmoji" placeholder="🎮" maxlength="2">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tagline</label>
+          <input class="form-input" type="text" id="cfgTagline" placeholder="Kalimat singkat di halaman donasi">
+        </div>
+        <button class="save-btn" onclick="saveProfile()">💾 Simpan Profil</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">💳 Pembayaran</div></div>
+        <div class="settings-grid">
+          <div class="form-group">
+            <label class="form-label">Nomor DANA</label>
+            <input class="form-input" type="text" id="cfgDana" value="087720254002">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nomor GoPay</label>
+            <input class="form-input" type="text" id="cfgGopay" value="087720254002">
+          </div>
+        </div>
+        <button class="save-btn" onclick="savePayment()">💾 Simpan Nomor</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">📱 Upload QRIS</div></div>
+        <div class="qris-upload-zone" onclick="document.getElementById('qrisFile').click()">
+          <input type="file" id="qrisFile" accept="image/*" style="display:none" onchange="uploadQRIS(event)">
+          <div class="qris-preview" id="qrisPreview"><img id="qrisImg" src="" alt="QRIS"></div>
+          <div class="qris-icon" id="qrisIcon">📱</div>
+          <div class="qris-text">Klik untuk upload gambar QRIS</div>
+          <div class="qris-sub">PNG, JPG, atau JPEG • Max 2MB</div>
+        </div>
+        <div style="margin-top:10px">
+          <button class="save-btn" onclick="saveQRIS()">💾 Simpan QRIS</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">🗑️ Data</div></div>
+        <button class="act-btn" onclick="clearData()" style="color:var(--red);border-color:var(--red);background:rgba(239,68,68,0.1)">🗑️ Hapus Semua Data Donasi</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let currentFilter = 'all';
+let qrisBase64 = '';
+let pollInterval;
+
+// ============ NAVIGATION ============
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  event.currentTarget && event.currentTarget.classList.add('active');
+  if (page === 'donations') { loadDonations(); document.getElementById('newDonationBadge').style.display = 'none'; }
+  if (page === 'dashboard') { loadDashboard(); }
+  if (page === 'settings') { loadSettings(); }
+  if (page === 'alert') { loadAlertSettings(); }
+}
+
+// ============ DASHBOARD ============
+function loadDashboard() {
+  const donations = getDonations();
+  const paid = donations.filter(d => d.status === 'paid');
+  const pending = donations.filter(d => d.status === 'confirmed');
+  const totalPaid = paid.reduce((s, d) => s + d.amount, 0);
+  const ms = donations.filter(d => d.mediaShare && d.status === 'paid');
+
+  document.getElementById('statTotal').textContent = formatRp(totalPaid);
+  document.getElementById('statCount').textContent = paid.length + ' donasi';
+  document.getElementById('statPending').textContent = pending.length;
+  document.getElementById('statPaid').textContent = paid.length;
+  document.getElementById('statMs').textContent = ms.length;
+
+  const recent = donations.slice(0, 5);
+  const tbody = document.getElementById('recentDonations');
+  if (!recent.length) {
+    tbody.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-size:14px">Belum ada donasi</div>';
+    return;
+  }
+  tbody.innerHTML = recent.map(d => `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div class="donor-av">${d.name[0].toUpperCase()}</div>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:13px">${esc(d.name)}</div>
+        <div style="font-size:11px;color:var(--muted)">${d.msg ? esc(d.msg) : '(tanpa pesan)'}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-weight:800;color:var(--accent2)">${formatRp(d.amount)}</div>
+        <div style="font-size:10px;color:var(--muted)">${timeAgo(d.time)}</div>
+      </div>
+      <span class="status-badge ${d.status === 'paid' ? 'paid' : d.status === 'confirmed' ? 'confirmed' : 'pending'}">
+        ${d.status === 'paid' ? '✓ Lunas' : d.status === 'confirmed' ? '⏳ Konfirm' : '● Pending'}
+      </span>
+    </div>
+  `).join('');
+}
+
+// ============ DONATIONS ============
+function loadDonations() {
+  const donations = getDonations();
+  const filtered = currentFilter === 'all' ? donations : donations.filter(d => d.status === currentFilter);
+  const tbody = document.getElementById('donTableBody');
+
+  // Update pending count
+  const pendingCount = donations.filter(d => d.status === 'confirmed').length;
+  const badge = document.getElementById('pendingCount');
+  if (pendingCount > 0) {
+    badge.style.display = 'inline-block';
+    badge.textContent = pendingCount;
+  } else {
+    badge.style.display = 'none';
+  }
+
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-table">Tidak ada donasi</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(d => `
+    <tr id="row-${d.id}">
+      <td>
+        <div class="donor-cell">
+          <div class="donor-av">${d.name[0].toUpperCase()}</div>
+          <div>
+            <div class="donor-name">${esc(d.name)}</div>
+            <div class="donor-msg">${d.msg ? esc(d.msg) : '(tanpa pesan)'}</div>
+            ${d.mediaShare ? `<div class="ms-indicator">🎬 MediaShare</div>` : ''}
+          </div>
+        </div>
+      </td>
+      <td class="amount-cell">${formatRp(d.amount)}</td>
+      <td><span class="method-badge ${d.method}">${d.method.toUpperCase()}</span></td>
+      <td>
+        <span class="status-badge ${d.status === 'paid' ? 'paid' : d.status === 'confirmed' ? 'confirmed' : 'pending'}">
+          ${d.status === 'paid' ? '✓ Terbayar' : d.status === 'confirmed' ? '⏳ Konfirmasi' : '● Pending'}
+        </span>
+      </td>
+      <td>
+        <div class="action-btns">
+          ${d.status === 'confirmed' ? `<button class="act-btn approve" onclick="approveDonation('${d.id}')">✅ Approve</button>` : ''}
+          ${d.status === 'paid' ? `<button class="act-btn send-alert" onclick="sendAlert('${d.id}')">🔔 Kirim Alert</button>` : ''}
+          <button class="act-btn" onclick="deleteDonation('${d.id}')" style="color:var(--red)">✕</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterDonations(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadDonations();
+}
+
+function approveDonation(id) {
+  const donations = getDonations();
+  const idx = donations.findIndex(d => d.id === id);
+  if (idx !== -1) {
+    donations[idx].status = 'paid';
+    donations[idx].paidAt = Date.now();
+    saveDonations(donations);
+    // Auto trigger alert
+    triggerAlert(donations[idx]);
+    showToast('✅ Donasi disetujui + alert dikirim!');
+    loadDonations();
+    loadDashboard();
+  }
+}
+
+function sendAlert(id) {
+  const donations = getDonations();
+  const d = donations.find(don => don.id === id);
+  if (d) {
+    triggerAlert(d);
+    showToast('🔔 Alert dikirim ke OBS!');
+  }
+}
+
+function deleteDonation(id) {
+  if (!confirm('Hapus donasi ini?')) return;
+  const donations = getDonations().filter(d => d.id !== id);
+  saveDonations(donations);
+  loadDonations();
+  loadDashboard();
+}
+
+function triggerAlert(donation) {
+  const alertData = {
+    ...donation,
+    alertTime: Date.now()
+  };
+  localStorage.setItem('alert_trigger', JSON.stringify(alertData));
+  localStorage.setItem('alert_trigger_ts', Date.now().toString());
+}
+
+// ============ SETTINGS ============
+function loadSettings() {
+  const cfg = getConfig();
+  document.getElementById('cfgName').value = cfg.name || '';
+  document.getElementById('cfgEmoji').value = cfg.emoji || '🎮';
+  document.getElementById('cfgTagline').value = cfg.tagline || '';
+  document.getElementById('cfgDana').value = cfg.dana || '087720254002';
+  document.getElementById('cfgGopay').value = cfg.gopay || '087720254002';
+
+  if (cfg.qrisImage) {
+    document.getElementById('qrisImg').src = cfg.qrisImage;
+    document.getElementById('qrisPreview').classList.add('show');
+    document.getElementById('qrisIcon').style.display = 'none';
+    qrisBase64 = cfg.qrisImage;
+  }
+}
+
+function saveProfile() {
+  const cfg = getConfig();
+  cfg.name = document.getElementById('cfgName').value.trim();
+  cfg.emoji = document.getElementById('cfgEmoji').value.trim() || '🎮';
+  cfg.tagline = document.getElementById('cfgTagline').value.trim();
+  localStorage.setItem('streamer_config', JSON.stringify(cfg));
+  showToast('✅ Profil disimpan!');
+}
+
+function savePayment() {
+  const cfg = getConfig();
+  cfg.dana = document.getElementById('cfgDana').value.trim();
+  cfg.gopay = document.getElementById('cfgGopay').value.trim();
+  localStorage.setItem('streamer_config', JSON.stringify(cfg));
+  showToast('✅ Nomor pembayaran disimpan!');
+}
+
+function uploadQRIS(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { showToast('⚠️ Gambar terlalu besar (max 2MB)'); return; }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    qrisBase64 = e.target.result;
+    document.getElementById('qrisImg').src = qrisBase64;
+    document.getElementById('qrisPreview').classList.add('show');
+    document.getElementById('qrisIcon').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveQRIS() {
+  if (!qrisBase64) { showToast('⚠️ Upload gambar QRIS dulu!'); return; }
+  const cfg = getConfig();
+  cfg.qrisImage = qrisBase64;
+  localStorage.setItem('streamer_config', JSON.stringify(cfg));
+  showToast('✅ QRIS disimpan!');
+}
+
+// ============ ALERT SETTINGS ============
+function loadAlertSettings() {
+  const s = JSON.parse(localStorage.getItem('alert_settings') || '{}');
+  document.getElementById('minAlert').value = s.minAlert || 5000;
+  document.getElementById('minMs').value = s.minMs || 10000;
+  document.getElementById('alertDuration').value = s.duration || 8;
+  document.getElementById('alertVolume').value = s.volume || 80;
+}
+
+function saveAlertSettings() {
+  const s = {
+    minAlert: parseInt(document.getElementById('minAlert').value),
+    minMs: parseInt(document.getElementById('minMs').value),
+    duration: parseInt(document.getElementById('alertDuration').value),
+    volume: parseInt(document.getElementById('alertVolume').value),
+  };
+  localStorage.setItem('alert_settings', JSON.stringify(s));
+  showToast('✅ Pengaturan alert disimpan!');
+}
+
+function sendTestAlert(isMediaShare) {
+  const name = document.getElementById('testName').value || 'TestUser';
+  const amount = parseInt(document.getElementById('testAmount').value) || 5000;
+  const msg = document.getElementById('testMsg').value || 'Test donasi!';
+  triggerAlert({
+    id: 'test_' + Date.now(),
+    name, msg, amount,
+    method: 'dana',
+    mediaShare: isMediaShare,
+    mediaUrl: isMediaShare ? 'https://youtube.com/watch?v=dQw4w9WgXcQ' : '',
+    status: 'paid', time: Date.now()
+  });
+  showToast('🔔 Test alert dikirim! Cek halaman alert.html');
+}
+
+function openAlert() {
+  window.open('alert.html', '_blank');
+}
+
+// ============ POLLING ============
+function startPolling() {
+  pollInterval = setInterval(() => {
+    checkNewDonations();
+    if (document.getElementById('page-donations').classList.contains('active')) loadDonations();
+    if (document.getElementById('page-dashboard').classList.contains('active')) loadDashboard();
+  }, 2000);
+}
+
+let lastTs = Date.now();
+function checkNewDonations() {
+  const ts = parseInt(localStorage.getItem('donation_confirmed_ts') || '0');
+  if (ts > lastTs) {
+    lastTs = ts;
+    document.getElementById('newDonationBadge').style.display = 'flex';
+    // Update pending badge
+    const donations = getDonations();
+    const pendingCount = donations.filter(d => d.status === 'confirmed').length;
+    const badge = document.getElementById('pendingCount');
+    badge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+    badge.textContent = pendingCount;
+  }
+}
+
+// ============ LINK ============
+function copyLink(filename) {
+  const path = window.location.href.replace('dashboard.html', filename);
+  navigator.clipboard.writeText(path).then(() => showToast('✅ Link disalin!'));
+}
+
+function clearData() {
+  if (!confirm('Hapus semua data donasi? Ini tidak bisa dikembalikan!')) return;
+  localStorage.removeItem('donations');
+  loadDashboard();
+  showToast('🗑️ Data dihapus');
+}
+
+// ============ UTILS ============
+function getDonations() { return JSON.parse(localStorage.getItem('donations') || '[]'); }
+function saveDonations(d) { localStorage.setItem('donations', JSON.stringify(d)); }
+function getConfig() { return JSON.parse(localStorage.getItem('streamer_config') || '{}'); }
+function formatRp(n) { return 'Rp ' + n.toLocaleString('id-ID'); }
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function timeAgo(ts) {
+  const diff = Date.now() - ts;
+  if (diff < 60000) return 'Baru saja';
+  if (diff < 3600000) return Math.floor(diff/60000) + ' mnt lalu';
+  if (diff < 86400000) return Math.floor(diff/3600000) + ' jam lalu';
+  return Math.floor(diff/86400000) + ' hari lalu';
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ============ INIT ============
+loadDashboard();
+loadAlertSettings();
+startPolling();
+</script>
+</body>
+</html>
